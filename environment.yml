@@ -1,0 +1,16 @@
+name: tensorflow-flower-retrain
+channels:
+    - https://conda.anaconda.org/menpo
+    - conda-forge
+dependencies:
+    - python=2.7
+    - openblas
+    - numpy
+    - scipy
+    - pandas
+    - Cython
+    - scikit-learn==0.19.1
+    - h5py
+    - pip:
+        - tensorflow==1.7.0
+        - tensorflow-hub

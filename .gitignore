@@ -1,0 +1,4 @@
+data/
+*.tfrecord
+model/
+*.pyc
