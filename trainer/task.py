@@ -37,16 +37,19 @@ def model_fn(features, labels, mode):
     prelogits = module(input)
 
     # Put additional layers for transfer learning
-    dense_256 = tf.layers.dense(prelogits, 256, activation=tf.nn.relu,
-                                kernel_initializer=tf.truncated_normal_initializer(stddev=1e-5))
-    dense_128 = tf.layers.dense(dense_256, 128, activation=tf.nn.relu,
-                                kernel_initializer=tf.truncated_normal_initializer(stddev=1e-5))
-    dense_64 = tf.layers.dense(dense_128, 64, activation=tf.nn.relu,
-                               kernel_initializer=tf.truncated_normal_initializer(stddev=1e-5))
-    dense_32 = tf.layers.dense(dense_64, 32, activation=tf.nn.relu,
-                               kernel_initializer=tf.truncated_normal_initializer(stddev=1e-5))
-    logits = tf.layers.dense(dense_32, NUM_CLASSES, activation=None,
-                             kernel_initializer=tf.truncated_normal_initializer(stddev=1e-5))
+    with tf.variable_scope("TransferLearning"):
+        dense_256 = tf.layers.dense(prelogits, 256, activation=tf.nn.relu,
+                                    kernel_initializer=tf.truncated_normal_initializer(stddev=1e-5))
+        dense_256 = tf.layers.dropout(dense_256, rate=0.25, training=is_training)
+        # dense_128 = tf.layers.dense(dense_256, 128, activation=tf.nn.relu,
+        #                             kernel_initializer=tf.truncated_normal_initializer(stddev=1e-5))
+        # dense_64 = tf.layers.dense(dense_128, 64, activation=tf.nn.relu,
+        #                            kernel_initializer=tf.truncated_normal_initializer(stddev=1e-5))
+        dense_32 = tf.layers.dense(dense_256, 32, activation=tf.nn.relu,
+                                   kernel_initializer=tf.truncated_normal_initializer(stddev=1e-5))
+        dense_32 = tf.layers.dropout(dense_32, rate=0.25, training=is_training)
+        logits = tf.layers.dense(dense_32, NUM_CLASSES, activation=None,
+                                 kernel_initializer=tf.truncated_normal_initializer(stddev=1e-5))
 
     predictions = {
         "classes": tf.argmax(input=logits, axis=1),
@@ -68,9 +71,15 @@ def model_fn(features, labels, mode):
     # Configure the Training Op (for TRAIN mode)
     if mode == tf.estimator.ModeKeys.TRAIN:
         # Optimizers
-        optimizer = tf.train.RMSPropOptimizer(
-            learning_rate=1e-7, decay=0.9, momentum=0.9, epsilon=1.0, centered=False)
-        train_op = optimizer.minimize(loss=loss, global_step=tf.train.get_global_step())
+        # optimizer = tf.train.RMSPropOptimizer(
+        #     learning_rate=1e-3, decay=0.9, momentum=0.9, epsilon=1.0, centered=False)
+        all_trainable_vars = tf.trainable_variables()
+        tl_trainable_vars = [var for var in all_trainable_vars
+                             if not var.name.startswith('TransferLearning')]
+        optimizer = tf.train.AdamOptimizer(learning_rate=0.0001)
+        train_op = optimizer.minimize(loss=loss,
+                                      global_step=tf.train.get_global_step(),
+                                      var_list=tl_trainable_vars)
 
         return tf.estimator.EstimatorSpec(
             mode=mode,

@@ -14,7 +14,7 @@ gcloud beta ml-engine jobs submit training ${JOB_NAME} \
   --staging-bucket gs://${GCS_BUCKET}/ \
   --region us-central1 \
   --config config.yml \
-  --runtime-version 1.7 \
+  --runtime-version 1.8 \
   -- \
     --model_dir "${MODEL_DIR}" \
     --train_data "${TRAIN_DATA}" \
