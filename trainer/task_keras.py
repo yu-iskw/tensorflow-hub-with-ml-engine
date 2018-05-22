@@ -40,7 +40,7 @@ def get_keras_model():
     model.add(keras.layers.Dense(64, activation='relu'))
     model.add(keras.layers.Dropout(rate=0.5))
     model.add(keras.layers.Dense(NUM_CLASSES, activation='softmax'))
-    base_model.trainable = False
+    base_model.trainable = True
     return model
 
 
